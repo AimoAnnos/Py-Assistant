@@ -3,6 +3,8 @@ import pyttsx3
 import datetime
 import webbrowser
 import os
+import re
+import datetime
 
 # Initialize speech recognition and text-to-speech engines
 r = sr.Recognizer()
@@ -34,18 +36,45 @@ def create_reminder():
     speak("What should I remind you about?")
     reminder_text = listen()
     if reminder_text:
-        speak("When should I remind you?")
+        speak("When should I remind you? Please say the time in the format 'HH:MM' or say a number of minutes/hours")
         reminder_time = listen()
         if reminder_time:
-            try:
-                datetime_obj = datetime.datetime.strptime(reminder_time, "%H:%M:%S")
-                now = datetime.datetime.now()
-                delta = datetime_obj - now.time()
-                seconds = delta.seconds
-                os.system(f'sleep {seconds} && say "Reminder: {reminder_text}" &')
-                speak(f"Okay, I will remind you about {reminder_text} in {delta.seconds // 60} minutes.")
-            except ValueError:
-                speak("Sorry, I didn't understand the time format.")
+            if ':' in reminder_time:
+                try:
+                    hour, minute = map(int, reminder_time.split(':'))
+                    now = datetime.datetime.now()
+                    reminder_datetime = datetime.datetime.combine(now.date(), datetime.time(hour, minute))
+                    if reminder_datetime < now:
+                        reminder_datetime += datetime.timedelta(days=1)
+                    reminder_time_str = reminder_datetime.strftime("%H:%M:%S")
+                    reminder_date_str = reminder_datetime.strftime("%Y/%m/%d")
+                    reminder_cmd = f'schtasks /create /tn "reminder" /tr "cmd /c echo Reminder: {reminder_text} &amp;&amp; exit" /sc once /st {reminder_time_str} /sd {reminder_date_str}'
+                    os.system(reminder_cmd)
+                    speak("Reminder created.")
+                except Exception as e:
+                    print(e)
+                    speak("Sorry, I could not create the reminder.")
+            else:
+                try:
+                    match = re.search(r'(\d+)\s+(minute|hour)', reminder_time)
+                    if match:
+                        num = int(match.group(1))
+                        units = match.group(2)
+                        if units == 'minute':
+                            delta = datetime.timedelta(minutes=num)
+                        else:
+                            delta = datetime.timedelta(hours=num)
+                        reminder_datetime = datetime.datetime.now() + delta
+                        reminder_time_str = reminder_datetime.strftime("%H:%M:%S")
+                        reminder_date_str = reminder_datetime.strftime("%d/%m/%Y")
+                        reminder_cmd = f'schtasks /create /tn "reminder" /tr "cmd /c echo Reminder: {reminder_text} &amp;&amp; exit" /sc once /st {reminder_time_str} /sd {reminder_date_str}'
+                        os.system(reminder_cmd)
+                        speak("Reminder created.")
+                    else:
+                        speak("Sorry, I did not understand the reminder time.")
+                except Exception as e:
+                    print(e)
+                    speak("Sorry, I could not create the reminder.")
 
 # Function to create a to-do list
 def create_todo_list():
@@ -86,7 +115,7 @@ while True:
     elif "search for" in text:
         query = text.split("search for")[1].strip()
         search_web(query)
-    elif "exit" in text or "stop" in text:
+    elif "exit" in text or "bye" in text:
         speak("Goodbye!")
         break
     else:
