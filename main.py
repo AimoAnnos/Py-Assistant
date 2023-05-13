@@ -76,6 +76,24 @@ def create_reminder():
                     print(e)
                     speak("Sorry, I could not create the reminder.")
 
+# def create_reminder(text, delay):
+#     delay_seconds = 0
+#     if "minute" in delay:
+#         delay_seconds = int(delay.split()[0]) * 60
+#     elif "hour" in delay:
+#         delay_seconds = int(delay.split()[0]) * 60 * 60
+
+#     now = datetime.datetime.now()
+#     reminder_time = now + datetime.timedelta(seconds=delay_seconds)
+
+#     with open("reminder.txt", "w") as f:
+#         f.write(text)
+
+#     reminder_cmd = f'notepad.exe "{os.getcwd()}\\reminder.txt"'
+
+#     os.system(f'schtasks /create /tn "reminder" /tr "{reminder_cmd}" /sc once /st {reminder_time.strftime("%H:%M")}')
+#     print(f"Reminder set for {reminder_time.strftime('%H:%M %p')}.")
+
 # Function to create a to-do list
 def create_todo_list():
     speak("What should I add to your to-do list?")
